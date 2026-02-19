@@ -1,106 +1,144 @@
 import { useState } from "react";
-
-const initialBuddies = [
-  {
-    id: crypto.randomUUID(),
-    name: "Sarah Johnson",
-    image: "https://i.pravatar.cc/150?img=1",
-    expertise: "React & JavaScript",
-    sessions: [
-      {
-        id: crypto.randomUUID(),
-        topic: "React Hooks Deep Dive",
-        duration: 90, // in minutes
-        type: "learning", // you learned from them
-        date: "2026-02-15",
-        participants: ["Sarah Johnson"],
-      },
-      {
-        id: crypto.randomUUID(),
-        topic: "State Management Patterns",
-        duration: 60,
-        type: "collaborative",
-        date: "2026-02-14",
-        participants: ["Sarah Johnson"],
-      },
-      {
-        id: crypto.randomUUID(),
-        topic: "CSS Flexbox Basics",
-        duration: 45,
-        type: "teaching", // you taught them
-        date: "2026-02-12",
-        participants: ["Sarah Johnson"],
-      },
-    ],
-    balance: 45, // positive = they owe you time, negative = you owe them
-  },
-  {
-    id: crypto.randomUUID(),
-    name: "Mike Chen",
-    image: "https://i.pravatar.cc/150?img=12",
-    expertise: "Python & Data Science",
-    sessions: [
-      {
-        id: crypto.randomUUID(),
-        topic: "Python Basics",
-        duration: 120,
-        type: "learning",
-        date: "2026-02-16",
-        participants: ["Mike Chen"],
-      },
-      {
-        id: crypto.randomUUID(),
-        topic: "HTML Semantic Tags",
-        duration: 30,
-        type: "teaching",
-        date: "2026-02-13",
-        participants: ["Mike Chen"],
-      },
-    ],
-    balance: -90,
-  },
-  {
-    id: crypto.randomUUID(),
-    name: "Emma Wilson",
-    image: "https://i.pravatar.cc/150?img=5",
-    expertise: "Node.js & Backend",
-    sessions: [
-      {
-        id: crypto.randomUUID(),
-        topic: "Express.js Fundamentals",
-        duration: 75,
-        type: "learning",
-        date: "2026-02-15",
-        participants: ["Emma Wilson"],
-      },
-      {
-        id: crypto.randomUUID(),
-        topic: "Git & GitHub Workflow",
-        duration: 50,
-        type: "teaching",
-        date: "2026-02-11",
-        participants: ["Emma Wilson"],
-      },
-      {
-        id: crypto.randomUUID(),
-        topic: "RESTful API Design",
-        duration: 90,
-        type: "collaborative",
-        date: "2026-02-10",
-        participants: ["Emma Wilson"],
-      },
-    ],
-    balance: 0,
-  },
-];
+import {
+  initialBuddies,
+  initialSessions,
+  initialScheduledSessions,
+} from "./Data.js";
+// const initialBuddies = [
+//   {
+//     id: crypto.randomUUID(),
+//     name: "Sarah Johnson",
+//     image: "https://i.pravatar.cc/150?img=1",
+//     expertise: "React & JavaScript",
+//     sessions: [
+//       {
+//         id: crypto.randomUUID(),
+//         topic: "React Hooks Deep Dive",
+//         duration: 90, // in minutes
+//         type: "learning", // you learned from them
+//         date: "2026-02-15",
+//         participants: ["Sarah Johnson"],
+//       },
+//       {
+//         id: crypto.randomUUID(),
+//         topic: "State Management Patterns",
+//         duration: 60,
+//         type: "collaborative",
+//         date: "2026-02-14",
+//         participants: ["Sarah Johnson"],
+//       },
+//       {
+//         id: crypto.randomUUID(),
+//         topic: "CSS Flexbox Basics",
+//         duration: 45,
+//         type: "teaching", // you taught them
+//         date: "2026-02-12",
+//         participants: ["Sarah Johnson"],
+//       },
+//     ],
+//     balance: 45, // positive = they owe you time, negative = you owe them
+//   },
+//   {
+//     id: crypto.randomUUID(),
+//     name: "Mike Chen",
+//     image: "https://i.pravatar.cc/150?img=12",
+//     expertise: "Python & Data Science",
+//     sessions: [
+//       {
+//         id: crypto.randomUUID(),
+//         topic: "Python Basics",
+//         duration: 120,
+//         type: "learning",
+//         date: "2026-02-16",
+//         participants: ["Mike Chen"],
+//       },
+//       {
+//         id: crypto.randomUUID(),
+//         topic: "HTML Semantic Tags",
+//         duration: 30,
+//         type: "teaching",
+//         date: "2026-02-13",
+//         participants: ["Mike Chen"],
+//       },
+//     ],
+//     balance: -90,
+//   },
+//   {
+//     id: crypto.randomUUID(),
+//     name: "Emma Wilson",
+//     image: "https://i.pravatar.cc/150?img=5",
+//     expertise: "Node.js & Backend",
+//     sessions: [
+//       {
+//         id: crypto.randomUUID(),
+//         topic: "Express.js Fundamentals",
+//         duration: 75,
+//         type: "learning",
+//         date: "2026-02-15",
+//         participants: ["Emma Wilson"],
+//       },
+//       {
+//         id: crypto.randomUUID(),
+//         topic: "Git & GitHub Workflow",
+//         duration: 50,
+//         type: "teaching",
+//         date: "2026-02-11",
+//         participants: ["Emma Wilson"],
+//       },
+//       {
+//         id: crypto.randomUUID(),
+//         topic: "RESTful API Design",
+//         duration: 90,
+//         type: "collaborative",
+//         date: "2026-02-10",
+//         participants: ["Emma Wilson"],
+//       },
+//     ],
+//     balance: 0,
+//   },
+// ];
 
 function App() {
   const [buddies, setBuddies] = useState(initialBuddies);
+  const [sessions, setSessions] = useState(initialSessions);
+  const [scheduledSessions, setScheduledSessions] = useState(
+    initialScheduledSessions,
+  );
   const [activeTab, setActiveTab] = useState("Dashboard");
 
   function changeTab(tab) {
     setActiveTab(tab);
   }
+
+  const calculateBalance = (buddyId) => {
+    let balance = 0;
+    initialSessions.forEach((session) => {
+      if (session.buddies.includes(buddyId)) {
+        const duration = parseInt(session.duration);
+        if (session.type == "teaching") {
+          balance += duration;
+        } else if (session.type == "learning") {
+          balance -= duration;
+        }
+      }
+    });
+    return balance;
+  };
+  const getBuddies = (scheduleId) => {
+    let buddies = [];
+    initialScheduledSessions.forEach((session) => {
+      if (session.id == scheduleId) {
+        session.buddies.forEach((buddyId) => {
+          initialBuddies.forEach((buddy) => {
+            if (buddyId == buddy.id) {
+              buddies.push(buddy.name);
+            }
+          });
+        });
+      }
+    });
+    return buddies;
+  };
 
   function addBuddy(newBuddy) {
     setBuddies((buddies) => [...buddies, newBuddy]);
@@ -110,9 +148,10 @@ function App() {
     <div className="container">
       <Header onChangeTab={changeTab} activeTab={activeTab} />
       {activeTab == "Dashboard" && (
-        <div>
+        <div className="main">
           <Dashboard />
-          <StudyBuddies buddies={buddies} />
+          <StudyBuddies buddies={buddies} calculateBalance={calculateBalance} />
+          <Schedules getBuddies={getBuddies} />
         </div>
       )}
       {activeTab == "Add Buddy" && <AddBuddyForm onAddBuddy={addBuddy} />}
@@ -167,7 +206,7 @@ function Header({ onChangeTab, activeTab }) {
 
 function Dashboard() {
   return (
-    <div className="main">
+    <div>
       <div className="summary">
         <p>Summary</p>
         <div className="summary-grid">
@@ -193,26 +232,26 @@ function SummaryCard({ label, value }) {
   );
 }
 
-function StudyBuddies({ buddies }) {
+function StudyBuddies({ buddies, calculateBalance }) {
   return (
     <div className="buddy-grid">
       {buddies.map((buddy) => (
         <BuddyCard
           name={buddy.name}
-          image={buddy.image}
+          avatar={buddy.avatar}
           expertise={buddy.expertise}
-          balance={buddy.balance}
+          balance={calculateBalance(buddy.id)}
         />
       ))}
     </div>
   );
 }
 
-function BuddyCard({ name, image, expertise, balance }) {
+function BuddyCard({ name, avatar, expertise, balance }) {
   return (
     <div className="buddy-card">
       <div className="buddy-avatar">
-        <img src={image} alt="" className="avatar-img avatar-placeholder" />
+        <img src={avatar} alt="" className="avatar-img avatar-placeholder" />
       </div>
       <p className="buddy-name">{name}</p>
       <p className="expertise">{expertise}</p>
@@ -231,6 +270,45 @@ function BuddyCard({ name, image, expertise, balance }) {
   );
 }
 
+function Schedules({ getBuddies }) {
+  return (
+    <div className="scheduled-section">
+      <p>Upcoming Sessions</p>
+      {initialScheduledSessions.map((scheduledSession) => (
+        <ScheduleCard
+          id={scheduledSession.id}
+          topic={scheduledSession.topic}
+          date={scheduledSession.date}
+          time={scheduledSession.time}
+          buddies={getBuddies}
+        />
+      ))}
+    </div>
+  );
+}
+
+function ScheduleCard({ id, topic, date, time, buddies }) {
+  return (
+    <div className="schedule-card">
+      <div>
+        <h3 className="title">{topic}</h3>
+        <p className="schedule-date">
+          {date} {time}
+        </p>
+        <p className="schedule-buddies">
+          With:{" "}
+          {buddies(id).map((buddy, index) => (
+            <span>
+              {index > 0 ? "," : ""} {buddy}
+            </span>
+          ))}
+        </p>
+      </div>
+      <button className="complete-button">Mark Complete</button>
+    </div>
+  );
+}
+
 function AddBuddyForm({ onAddBuddy }) {
   const [name, setName] = useState("");
   const [URL, setURL] = useState("");
@@ -240,7 +318,7 @@ function AddBuddyForm({ onAddBuddy }) {
     const newBuddy = {
       id: crypto.randomUUID(),
       name: name,
-      image: URL,
+      avatar: URL,
       expertise: expertise,
       sessions: [
         // {
@@ -264,6 +342,9 @@ function AddBuddyForm({ onAddBuddy }) {
     };
 
     onAddBuddy(newBuddy);
+    setName("");
+    setURL("");
+    setExpertise("");
   }
 
   return (
