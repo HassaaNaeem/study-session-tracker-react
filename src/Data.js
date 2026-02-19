@@ -114,5 +114,3 @@ const getBuddies = (scheduleId) => {
   });
   return buddies;
 };
-
-console.log(getBuddies(202));

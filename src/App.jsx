@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { use, useState } from "react";
 import {
   initialBuddies,
   initialSessions,
@@ -112,7 +112,7 @@ function App() {
 
   const calculateBalance = (buddyId) => {
     let balance = 0;
-    initialSessions.forEach((session) => {
+    sessions.forEach((session) => {
       if (session.buddies.includes(buddyId)) {
         const duration = parseInt(session.duration);
         if (session.type == "teaching") {
@@ -125,38 +125,56 @@ function App() {
     return balance;
   };
   const getBuddies = (scheduleId) => {
-    let buddies = [];
-    initialScheduledSessions.forEach((session) => {
+    let buddyList = [];
+    console.log(scheduledSessions);
+    scheduledSessions.forEach((session) => {
       if (session.id == scheduleId) {
         session.buddies.forEach((buddyId) => {
-          initialBuddies.forEach((buddy) => {
+          buddies.forEach((buddy) => {
             if (buddyId == buddy.id) {
-              buddies.push(buddy.name);
+              buddyList.push(buddy.name);
             }
           });
         });
       }
     });
-    return buddies;
+    return buddyList;
   };
+  console.log(getBuddies(201));
 
   function addBuddy(newBuddy) {
     setBuddies((buddies) => [...buddies, newBuddy]);
   }
+
+  const handleScheduleSession = (newScheduleSession) => {
+    setScheduledSessions((scheduledSessions) => [
+      ...scheduledSessions,
+      newScheduleSession,
+    ]);
+    console.log(scheduledSessions);
+  };
 
   return (
     <div className="container">
       <Header onChangeTab={changeTab} activeTab={activeTab} />
       {activeTab == "Dashboard" && (
         <div className="main">
-          <Dashboard />
+          <Dashboard buddies={buddies} sessions={sessions} />
           <StudyBuddies buddies={buddies} calculateBalance={calculateBalance} />
-          <Schedules getBuddies={getBuddies} />
+          <Schedules
+            getBuddies={getBuddies}
+            scheduledSessions={scheduledSessions}
+          />
         </div>
       )}
       {activeTab == "Add Buddy" && <AddBuddyForm onAddBuddy={addBuddy} />}
-      {activeTab == "Log Session" && <StudySessionForm />}
-      {activeTab == "Schedule" && <ScheduleForm />}
+      {activeTab == "Log Session" && <StudySessionForm buddies={buddies} />}
+      {activeTab == "Schedule" && (
+        <ScheduleForm
+          buddies={buddies}
+          onAddScheduleSession={handleScheduleSession}
+        />
+      )}
     </div>
   );
 }
@@ -204,15 +222,21 @@ function Header({ onChangeTab, activeTab }) {
   );
 }
 
-function Dashboard() {
+function Dashboard({ buddies, sessions }) {
+  const totalStudyTime = sessions.reduce((acc, session) => {
+    return acc + Number(session.duration);
+  }, 0);
   return (
     <div>
       <div className="summary">
         <p>Summary</p>
         <div className="summary-grid">
-          <SummaryCard label={"Total Study Time"} value={0 + " min"} />
-          <SummaryCard label={"Study Buddies"} value={0} />
-          <SummaryCard label={"Sessions"} value={0} />
+          <SummaryCard
+            label={"Total Study Time"}
+            value={totalStudyTime + " min"}
+          />
+          <SummaryCard label={"Study Buddies"} value={buddies.length} />
+          <SummaryCard label={"Sessions"} value={sessions.length} />
         </div>
         <div className="top-topics">
           <b>Top Topics:</b> React Hooks Deep Dive, Calculus Problem Set, Group
@@ -270,11 +294,11 @@ function BuddyCard({ name, avatar, expertise, balance }) {
   );
 }
 
-function Schedules({ getBuddies }) {
+function Schedules({ getBuddies, scheduledSessions }) {
   return (
     <div className="scheduled-section">
       <p>Upcoming Sessions</p>
-      {initialScheduledSessions.map((scheduledSession) => (
+      {scheduledSessions.map((scheduledSession) => (
         <ScheduleCard
           id={scheduledSession.id}
           topic={scheduledSession.topic}
@@ -320,25 +344,6 @@ function AddBuddyForm({ onAddBuddy }) {
       name: name,
       avatar: URL,
       expertise: expertise,
-      sessions: [
-        // {
-        //   id: crypto.randomUUID(),
-        //   topic: "Python Basics",
-        //   duration: 120,
-        //   type: "learning",
-        //   date: "2026-02-16",
-        //   participants: ["Mike Chen"],
-        // },
-        // {
-        //   id: crypto.randomUUID(),
-        //   topic: "HTML Semantic Tags",
-        //   duration: 30,
-        //   type: "teaching",
-        //   date: "2026-02-13",
-        //   participants: ["Mike Chen"],
-        // },
-      ],
-      balance: 50,
     };
 
     onAddBuddy(newBuddy);
@@ -382,7 +387,7 @@ function AddBuddyForm({ onAddBuddy }) {
   );
 }
 
-function StudySessionForm() {
+function StudySessionForm({ buddies }) {
   return (
     <div className="form-container">
       <p>Log Study Session</p>
@@ -409,7 +414,7 @@ function StudySessionForm() {
           <label htmlFor="" className="label">
             Study Buddies Involved *
           </label>
-          {initialBuddies.map((buddy) => (
+          {buddies.map((buddy) => (
             <CheckboxGroup name={buddy.name} />
           ))}
         </div>
@@ -451,22 +456,76 @@ function FormGroup({
   );
 }
 
-function ScheduleForm() {
+function ScheduleForm({ buddies, onAddScheduleSession }) {
+  const [topic, setTopic] = useState("");
+  const [date, setDate] = useState("");
+  const [time, setTime] = useState("");
+  const [buddyList, setBuddyList] = useState([]);
+  const [isChecked, setIsChecked] = useState(false);
+
+  const handleCheckboxChange = (e) => {
+    const { value, checked } = e.target;
+
+    if (checked) {
+      setBuddyList((prev) => [...prev, Number(value)]);
+    } else {
+      setBuddyList((prev) => prev.filter((item) => item !== value));
+    }
+  };
+
   return (
     <div className="form-container">
       <p>Schedule Future Session</p>
-      <form action="" className="form">
-        <FormGroup inputType={"text"} placeholder={"e.g., Physics Study Group"}>
+      <form
+        action=""
+        className="form"
+        onSubmit={(e) => {
+          e.preventDefault();
+          const newScheduleSession = {
+            id: crypto.randomUUID(),
+            topic: topic,
+            date: date,
+            time: time,
+            buddies: buddyList,
+            completed: false,
+          };
+          onAddScheduleSession(newScheduleSession);
+        }}
+      >
+        <FormGroup
+          inputType={"text"}
+          value={topic}
+          onChange={(e) => setTopic(e.target.value)}
+          placeholder={"e.g., Physics Study Group"}
+        >
           Session Topic *
         </FormGroup>
-        <FormGroup inputType={"date"}>Date *</FormGroup>
-        <FormGroup inputType={"time"}>Time *</FormGroup>
+        <FormGroup
+          inputType={"date"}
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+        >
+          Date *
+        </FormGroup>
+        <FormGroup
+          inputType={"time"}
+          value={time}
+          onChange={(e) => setTime(e.target.value)}
+        >
+          Time *
+        </FormGroup>
         <div className="form-group">
           <label htmlFor="" className="label">
             Study Buddies *
           </label>
-          {initialBuddies.map((buddy) => (
-            <CheckboxGroup name={buddy.name} />
+          {buddies.map((buddy) => (
+            <CheckboxGroup
+              id={buddy.id}
+              onChange={handleCheckboxChange}
+              name={buddy.name}
+              value={buddy.id}
+              checked={buddyList.includes(buddy.id)}
+            />
           ))}
         </div>
         <button className="submit-button">Schedule Session</button>
@@ -475,10 +534,17 @@ function ScheduleForm() {
   );
 }
 
-function CheckboxGroup({ name }) {
+function CheckboxGroup({ id, name, checked, onChange, value }) {
   return (
     <div className="checkbox-group">
-      <input type="checkbox" className="checkbox" name="" id="" />{" "}
+      <input
+        value={value}
+        id={id}
+        type="checkbox"
+        className="checkbox"
+        checked={checked}
+        onChange={onChange}
+      />{" "}
       <span className="checkbox-label">{name}</span>
     </div>
   );
