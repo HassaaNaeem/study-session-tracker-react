@@ -156,6 +156,10 @@ function App() {
     console.log(scheduledSessions);
   };
 
+  const onAddSession = (newSession) => {
+    setSessions((prevSessions) => [...prevSessions, newSession]);
+  };
+
   function getActiveCardDetails(id, name) {
     setActiveCard(id);
     setActiveCardName(name);
@@ -180,7 +184,9 @@ function App() {
         </div>
       )}
       {activeTab == "Add Buddy" && <AddBuddyForm onAddBuddy={addBuddy} />}
-      {activeTab == "Log Session" && <StudySessionForm buddies={buddies} />}
+      {activeTab == "Log Session" && (
+        <StudySessionForm buddies={buddies} onAddSession={onAddSession} />
+      )}
       {activeTab == "Schedule" && (
         <ScheduleForm
           buddies={buddies}
@@ -315,18 +321,24 @@ function BuddyCard({
   return (
     <div className="buddy-card" onClick={onBuddyCardClick}>
       <div className="buddy-avatar">
-        <img src={avatar} alt="" className="avatar-img avatar-placeholder" />
+        {avatar ? (
+          <img src={avatar} alt="" className="avatar-img" />
+        ) : (
+          <div className="avatar-placeholder">
+            <p>{name.split("")[0]}</p>
+          </div>
+        )}
       </div>
       <p className="buddy-name">{name}</p>
       <p className="expertise">{expertise}</p>
       {balance > 0 && (
         <p className="balance-positive">
-          {name.split(" ")[0]} owes you ${Math.abs(balance)}
+          {name.split(" ")[0]} owes you {Math.abs(balance)} mins
         </p>
       )}
       {balance < 0 && (
         <p className="balance-negative">
-          You owe {name.split(" ")[0]} ${Math.abs(balance)}
+          You owe {name.split(" ")[0]} {Math.abs(balance)} mins
         </p>
       )}
       {balance == 0 && <p className="balance-neutral">All Balanced</p>}
@@ -423,7 +435,7 @@ function AddBuddyForm({ onAddBuddy }) {
     const newBuddy = {
       id: id,
       name: name,
-      avatar: `${URL}?u=${id}`,
+      avatar: URL ? `${URL}?u=${id}` : "",
       expertise: expertise,
     };
 
@@ -468,20 +480,62 @@ function AddBuddyForm({ onAddBuddy }) {
   );
 }
 
-function StudySessionForm({ buddies }) {
+function StudySessionForm({ buddies, onAddSession }) {
+  const [topic, setTopic] = useState("");
+  const [duration, setDuration] = useState("");
+  const [sessionType, setSessionType] = useState("Collaborative");
+  const [buddyList, setBuddyList] = useState([]);
+  console.log(topic, duration, sessionType, buddyList);
+
+  const handleCheckboxChange = (e) => {
+    const { value, checked } = e.target;
+
+    if (checked) {
+      setBuddyList((prev) => [...prev, Number(value)]);
+    } else {
+      setBuddyList((prev) => prev.filter((item) => item != value));
+    }
+  };
   return (
     <div className="form-container">
       <p>Log Study Session</p>
-      <form action="" className="form">
+      <form
+        action=""
+        className="form"
+        onSubmit={(e) => {
+          e.preventDefault();
+          const newSession = {
+            id: crypto.randomUUID(),
+            topic: topic,
+            duration: duration,
+            type: sessionType,
+            buddies: buddyList,
+            date: new Date(Date.now() + 60 * 60 * 1000)
+              .toISOString()
+              .split("T")[0],
+          };
+          onAddSession(newSession);
+        }}
+      >
         <FormGroup
+          value={topic}
+          onChange={(e) => setTopic(e.target.value)}
           inputType={"text"}
           placeholder={"e.g., React Hooks, Calculus"}
         >
           Session Topic *
         </FormGroup>
-        <FormGroup inputType={"number"}>Duration (minutes) *</FormGroup>
+        <FormGroup
+          inputType={"number"}
+          value={duration}
+          onChange={(e) => setDuration(e.target.value)}
+        >
+          Duration (minutes) *
+        </FormGroup>
         <FormGroup
           select={true}
+          value={sessionType}
+          onChange={(e) => setSessionType(e.target.value)}
           options={[
             "Collaborative (No debt)",
             "Teaching (They owe you)",
@@ -496,7 +550,13 @@ function StudySessionForm({ buddies }) {
             Study Buddies Involved *
           </label>
           {buddies.map((buddy) => (
-            <CheckboxGroup name={buddy.name} />
+            <CheckboxGroup
+              id={buddy.id}
+              onCheckboxChange={handleCheckboxChange}
+              name={buddy.name}
+              value={buddy.id}
+              checked={buddyList.includes(buddy.id)}
+            />
           ))}
         </div>
         <button className="submit-button">Log Session</button>
@@ -527,7 +587,13 @@ function FormGroup({
         />
       )}
       {select && (
-        <select name="" className="input" id="" value={value}>
+        <select
+          name=""
+          className="input"
+          id=""
+          onChange={onChange}
+          value={value}
+        >
           {options.map((option) => (
             <option value={option.split(" ")[0].toLowerCase()}>{option}</option>
           ))}
@@ -542,7 +608,6 @@ function ScheduleForm({ buddies, onAddScheduleSession }) {
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [buddyList, setBuddyList] = useState([]);
-  const [isChecked, setIsChecked] = useState(false);
 
   const handleCheckboxChange = (e) => {
     const { value, checked } = e.target;
@@ -550,7 +615,7 @@ function ScheduleForm({ buddies, onAddScheduleSession }) {
     if (checked) {
       setBuddyList((prev) => [...prev, Number(value)]);
     } else {
-      setBuddyList((prev) => prev.filter((item) => item !== value));
+      setBuddyList((prev) => prev.filter((item) => item != value));
     }
   };
 
@@ -602,7 +667,7 @@ function ScheduleForm({ buddies, onAddScheduleSession }) {
           {buddies.map((buddy) => (
             <CheckboxGroup
               id={buddy.id}
-              onChange={handleCheckboxChange}
+              onCheckboxChange={handleCheckboxChange}
               name={buddy.name}
               value={buddy.id}
               checked={buddyList.includes(buddy.id)}
@@ -615,7 +680,7 @@ function ScheduleForm({ buddies, onAddScheduleSession }) {
   );
 }
 
-function CheckboxGroup({ id, name, checked, onChange, value }) {
+function CheckboxGroup({ id, name, checked, onCheckboxChange, value }) {
   return (
     <div className="checkbox-group">
       <input
@@ -624,9 +689,11 @@ function CheckboxGroup({ id, name, checked, onChange, value }) {
         type="checkbox"
         className="checkbox"
         checked={checked}
-        onChange={onChange}
+        onChange={onCheckboxChange}
       />{" "}
-      <span className="checkbox-label">{name}</span>
+      <label className="checkbox-label" htmlFor={id}>
+        {name}
+      </label>
     </div>
   );
 }
