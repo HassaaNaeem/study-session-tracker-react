@@ -32,7 +32,9 @@ export const initialSessions = [
     duration: "90",
     type: "learning", // You learned from them (you owe them time)
     buddies: [1], // Array of buddy IDs involved
-    date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0],
   },
   {
     id: 102,
@@ -40,7 +42,9 @@ export const initialSessions = [
     duration: "60",
     type: "teaching", // You taught them (they owe you time)
     buddies: [2],
-    date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+    date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0],
   },
   {
     id: 103,
@@ -48,7 +52,9 @@ export const initialSessions = [
     duration: "120",
     type: "collaborative", // No debt created
     buddies: [1, 2, 3], // Group session with multiple buddies
-    date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+    date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0],
   },
   {
     id: 104,
@@ -56,7 +62,9 @@ export const initialSessions = [
     duration: "45",
     type: "learning",
     buddies: [1],
-    date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+    date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0],
   },
   {
     id: 105,
@@ -64,7 +72,9 @@ export const initialSessions = [
     duration: "75",
     type: "collaborative",
     buddies: [3],
-    date: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
+    date: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0],
   },
   {
     id: 106,
@@ -72,7 +82,9 @@ export const initialSessions = [
     duration: "90",
     type: "teaching",
     buddies: [4],
-    date: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
+    date: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0],
   },
 ];
 

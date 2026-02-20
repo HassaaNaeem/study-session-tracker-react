@@ -104,6 +104,8 @@ function App() {
   const [scheduledSessions, setScheduledSessions] = useState(
     initialScheduledSessions,
   );
+  const [activeCard, setActiveCard] = useState(0);
+  const [activeCardName, setActiveCardName] = useState("");
   const [activeTab, setActiveTab] = useState("Dashboard");
 
   function changeTab(tab) {
@@ -154,13 +156,23 @@ function App() {
     console.log(scheduledSessions);
   };
 
+  function getActiveCardDetails(id, name) {
+    setActiveCard(id);
+    setActiveCardName(name);
+  }
+
   return (
     <div className="container">
       <Header onChangeTab={changeTab} activeTab={activeTab} />
       {activeTab == "Dashboard" && (
         <div className="main">
           <Dashboard buddies={buddies} sessions={sessions} />
-          <StudyBuddies buddies={buddies} calculateBalance={calculateBalance} />
+          <StudyBuddies
+            buddies={buddies}
+            calculateBalance={calculateBalance}
+            onChangeTab={changeTab}
+            getActiveCardDetails={getActiveCardDetails}
+          />
           <Schedules
             getBuddies={getBuddies}
             scheduledSessions={scheduledSessions}
@@ -173,6 +185,14 @@ function App() {
         <ScheduleForm
           buddies={buddies}
           onAddScheduleSession={handleScheduleSession}
+        />
+      )}
+      {activeTab == "Sessions" && (
+        <Sessions
+          sessions={sessions}
+          onChangeTab={changeTab}
+          activeCard={activeCard}
+          activeCardName={activeCardName}
         />
       )}
     </div>
@@ -256,24 +276,44 @@ function SummaryCard({ label, value }) {
   );
 }
 
-function StudyBuddies({ buddies, calculateBalance }) {
+function StudyBuddies({
+  buddies,
+  calculateBalance,
+  onChangeTab,
+  getActiveCardDetails,
+}) {
   return (
     <div className="buddy-grid">
       {buddies.map((buddy) => (
         <BuddyCard
+          id={buddy.id}
           name={buddy.name}
           avatar={buddy.avatar}
           expertise={buddy.expertise}
           balance={calculateBalance(buddy.id)}
+          onChangeTab={onChangeTab}
+          getActiveCardDetails={getActiveCardDetails}
         />
       ))}
     </div>
   );
 }
 
-function BuddyCard({ name, avatar, expertise, balance }) {
+function BuddyCard({
+  id,
+  name,
+  avatar,
+  expertise,
+  balance,
+  onChangeTab,
+  getActiveCardDetails,
+}) {
+  const onBuddyCardClick = () => {
+    getActiveCardDetails(id, name);
+    onChangeTab("Sessions");
+  };
   return (
-    <div className="buddy-card">
+    <div className="buddy-card" onClick={onBuddyCardClick}>
       <div className="buddy-avatar">
         <img src={avatar} alt="" className="avatar-img avatar-placeholder" />
       </div>
@@ -333,22 +373,63 @@ function ScheduleCard({ id, topic, date, time, buddies }) {
   );
 }
 
+function Sessions({ sessions, onChangeTab, activeCard, activeCardName }) {
+  const filteredSessions = sessions.filter((session) =>
+    session.buddies.includes(activeCard),
+  );
+  console.log(filteredSessions);
+  return (
+    <div className="main">
+      <button className="back-button" onClick={() => onChangeTab("Dashboard")}>
+        Back to Dashboard
+      </button>
+      <div className="session-card">
+        <p>{activeCardName}</p>
+        <p>Session history</p>
+        {filteredSessions.map((session) => (
+          <SessionItem
+            key={session.id}
+            topic={session.topic}
+            duration={session.duration}
+            type={session.type}
+            date={session.date}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SessionItem({ topic, duration, type, date }) {
+  return (
+    <div className="session-item">
+      <div>
+        <span className="session-title">{topic}</span>
+        <span> - </span> <span> {duration} min </span>
+        <span className="session-type">({type})</span>
+      </div>
+      <p className="session-date">{date}</p>
+    </div>
+  );
+}
+
 function AddBuddyForm({ onAddBuddy }) {
   const [name, setName] = useState("");
-  const [URL, setURL] = useState("");
+  const [URL, setURL] = useState("https://i.pravatar.cc/48");
   const [expertise, setExpertise] = useState("");
   function createNewBuddy(e) {
     e.preventDefault();
+    const id = crypto.randomUUID();
     const newBuddy = {
-      id: crypto.randomUUID(),
+      id: id,
       name: name,
-      avatar: URL,
+      avatar: `${URL}?u=${id}`,
       expertise: expertise,
     };
 
     onAddBuddy(newBuddy);
     setName("");
-    setURL("");
+    setURL("https://i.pravatar.cc/48");
     setExpertise("");
   }
 
