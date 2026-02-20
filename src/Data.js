@@ -96,6 +96,8 @@ export const initialScheduledSessions = [
       .toISOString()
       .split("T")[0],
     time: "14:00",
+    duration: "60",
+    type: "collaborative",
     buddies: [1, 4], // Sarah and Alex
     completed: false,
   },
@@ -106,23 +108,11 @@ export const initialScheduledSessions = [
       .toISOString()
       .split("T")[0],
     time: "10:00",
+    duration: "90",
+    type: "learning",
     buddies: [3, 4], // Emily and ALex
     completed: false,
   },
 ];
 
-const getBuddies = (scheduleId) => {
-  let buddies = [];
-  initialScheduledSessions.forEach((session) => {
-    if (session.id == scheduleId) {
-      session.buddies.forEach((buddyId) => {
-        initialBuddies.forEach((buddy) => {
-          if (buddyId == buddy.id) {
-            buddies.push(buddy.name);
-          }
-        });
-      });
-    }
-  });
-  return buddies;
-};
+// const initialBuddies = [

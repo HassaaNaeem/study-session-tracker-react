@@ -4,7 +4,7 @@ import {
   initialSessions,
   initialScheduledSessions,
 } from "./Data.js";
-// const initialBuddies = [
+
 //   {
 //     id: crypto.randomUUID(),
 //     name: "Sarah Johnson",
@@ -104,6 +104,7 @@ function App() {
   const [scheduledSessions, setScheduledSessions] = useState(
     initialScheduledSessions,
   );
+  const [buddyList, setBuddyList] = useState([]);
   const [activeCard, setActiveCard] = useState(0);
   const [activeCardName, setActiveCardName] = useState("");
   const [activeTab, setActiveTab] = useState("Dashboard");
@@ -180,6 +181,10 @@ function App() {
           <Schedules
             getBuddies={getBuddies}
             scheduledSessions={scheduledSessions}
+            setSessions={setSessions}
+            setScheduledSessions={setScheduledSessions}
+            buddyList={buddyList}
+            setBuddyList={setBuddyList}
           />
         </div>
       )}
@@ -189,6 +194,8 @@ function App() {
       )}
       {activeTab == "Schedule" && (
         <ScheduleForm
+          buddyList={buddyList}
+          setBuddyList={setBuddyList}
           buddies={buddies}
           onAddScheduleSession={handleScheduleSession}
         />
@@ -346,28 +353,58 @@ function BuddyCard({
   );
 }
 
-function Schedules({ getBuddies, scheduledSessions }) {
+function Schedules({
+  getBuddies,
+  scheduledSessions,
+  setSessions,
+  setScheduledSessions,
+  buddyList,
+  setBuddyList,
+}) {
   return (
     <div className="scheduled-section">
       <p>Upcoming Sessions</p>
-      {scheduledSessions.map((scheduledSession) => (
-        <ScheduleCard
-          id={scheduledSession.id}
-          topic={scheduledSession.topic}
-          date={scheduledSession.date}
-          time={scheduledSession.time}
-          buddies={getBuddies}
-        />
-      ))}
+      {scheduledSessions.map(
+        (scheduledSession) => (
+          setBuddyList(scheduledSession.buddies),
+          (
+            <ScheduleCard
+              id={scheduledSession.id}
+              topic={scheduledSession.topic}
+              date={scheduledSession.date}
+              time={scheduledSession.time}
+              duration={scheduledSession.duration}
+              sessionType={scheduledSession.type}
+              buddies={getBuddies}
+              setSessions={setSessions}
+              setScheduledSessions={setScheduledSessions}
+              buddyList={buddyList}
+            />
+          )
+        ),
+      )}
     </div>
   );
 }
 
-function ScheduleCard({ id, topic, date, time, buddies }) {
+function ScheduleCard({
+  id,
+  topic,
+  date,
+  time,
+  duration,
+  sessionType,
+  buddies,
+  setSessions,
+  setScheduledSessions,
+  buddyList,
+}) {
   return (
     <div className="schedule-card">
       <div>
-        <h3 className="title">{topic}</h3>
+        <h3 className="title">
+          {topic} - {duration} mins
+        </h3>
         <p className="schedule-date">
           {date} {time}
         </p>
@@ -377,10 +414,30 @@ function ScheduleCard({ id, topic, date, time, buddies }) {
             <span>
               {index > 0 ? "," : ""} {buddy}
             </span>
-          ))}
+          ))}{" "}
+          - <span>({sessionType})</span>
         </p>
       </div>
-      <button className="complete-button">Mark Complete</button>
+      <button
+        className="complete-button"
+        onClick={() => {
+          const newSession = {
+            id: crypto.randomUUID(),
+            topic: topic,
+            duration: duration,
+            type: sessionType,
+            buddies: buddyList,
+            date: date,
+          };
+          console.log(newSession);
+          setSessions((prev) => [...prev, newSession]);
+          setScheduledSessions((scheduledSession) =>
+            scheduledSession.filter((session) => session.id !== id),
+          );
+        }}
+      >
+        Mark Complete
+      </button>
     </div>
   );
 }
@@ -485,7 +542,6 @@ function StudySessionForm({ buddies, onAddSession }) {
   const [duration, setDuration] = useState("");
   const [sessionType, setSessionType] = useState("Collaborative");
   const [buddyList, setBuddyList] = useState([]);
-  console.log(topic, duration, sessionType, buddyList);
 
   const handleCheckboxChange = (e) => {
     const { value, checked } = e.target;
@@ -515,6 +571,10 @@ function StudySessionForm({ buddies, onAddSession }) {
               .split("T")[0],
           };
           onAddSession(newSession);
+          setTopic("");
+          setDuration("");
+          setSessionType("Collaborative");
+          setBuddyList([]);
         }}
       >
         <FormGroup
@@ -603,11 +663,17 @@ function FormGroup({
   );
 }
 
-function ScheduleForm({ buddies, onAddScheduleSession }) {
+function ScheduleForm({
+  buddies,
+  onAddScheduleSession,
+  buddyList,
+  setBuddyList,
+}) {
   const [topic, setTopic] = useState("");
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
-  const [buddyList, setBuddyList] = useState([]);
+  const [duration, setDuration] = useState("");
+  const [sessionType, setSessionType] = useState("Collaborative");
 
   const handleCheckboxChange = (e) => {
     const { value, checked } = e.target;
@@ -632,10 +698,19 @@ function ScheduleForm({ buddies, onAddScheduleSession }) {
             topic: topic,
             date: date,
             time: time,
+            duration: duration,
+            type: sessionType,
             buddies: buddyList,
             completed: false,
           };
           onAddScheduleSession(newScheduleSession);
+
+          setTopic("");
+          setDate("");
+          setTime("");
+          setDuration("");
+          setSessionType("Collaborative");
+          setBuddyList([]);
         }}
       >
         <FormGroup
@@ -659,6 +734,25 @@ function ScheduleForm({ buddies, onAddScheduleSession }) {
           onChange={(e) => setTime(e.target.value)}
         >
           Time *
+        </FormGroup>
+        <FormGroup
+          inputType={"number"}
+          value={duration}
+          onChange={(e) => setDuration(e.target.value)}
+        >
+          Duration *
+        </FormGroup>
+        <FormGroup
+          select={true}
+          value={sessionType}
+          onChange={(e) => setSessionType(e.target.value)}
+          options={[
+            "Collaborative (No debt)",
+            "Teaching (They owe you)",
+            "Learning (You owe them)",
+          ]}
+        >
+          Session Type *
         </FormGroup>
         <div className="form-group">
           <label htmlFor="" className="label">
